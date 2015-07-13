@@ -3,6 +3,10 @@
 # Pull base image.
 FROM debian:latest
 
+# Main variable
+ENV MEDIAWIKI_VERSION=mediawiki-1.24.2
+
+
 # Update system
 RUN  apt-get update
 
@@ -27,24 +31,23 @@ RUN    apt-get install -y \
 
 ####
 # Mediawiki install
-####
+###
+
+ENV MEDIAWIKI_DIR /var/www/html/$MEDIAWIKI_VERSION
 
 WORKDIR /var/www/html/
 
-### !!! REPLACE BY COPY
-#RUN wget https://releases.wikimedia.org/mediawiki/1.24/mediawiki-1.24.2.tar.gz
-#RUN tar -xzf mediawiki-1.24.2.tar.gz
-#COPY mediawiki-1.24.2.tar.gz /var/www/html/
-RUN curl https://releases.wikimedia.org/mediawiki/1.24/mediawiki-1.24.2.tar.gz \
+# Getting working version of mediawiki (25 is buggy)
+RUN curl https://releases.wikimedia.org/mediawiki/1.24/$MEDIAWIKI_VERSION.tar.gz \
   | tar -xz
 
-WORKDIR mediawiki-1.24.2
+WORKDIR $MEDIAWIKI_VERSION
 
 # Composer install, config, update
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
-ADD composer.json /var/www/html/mediawiki-1.24.2/
+ADD composer.json $MEDIAWIKI_DIR/
 RUN composer update --no-dev
 
 
@@ -54,15 +57,34 @@ ADD 000-default.conf /etc/apache2/sites-enabled/
 # Right Management
 RUN chown -R www-data:www-data /var/www/
 
-# Cleaning
-RUN apt-get autoclean && \
-    rm -rf /var/lib/apt/lists/*
+
 
 # Define mountable directories.
 #VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
 
 # Define working directory.
 #WORKDIR /etc/nginx
+
+####
+# Mediawiki Tailoring
+####
+
+ADD LocalSettings.php ./
+
+VOLUME /var/www/mediawiki/images
+VOLUME /var/www/html/custom
+
+#VOLUME /etc/mediawiki/CustomSettings.php
+#VOLUME /var/www/mediawiki/images/logo.png
+
+
+####
+# Cleaning
+####
+RUN apt-get install nano
+
+RUN apt-get autoclean && \
+    rm -rf /var/lib/apt/lists/*
 
 
 ####
@@ -82,11 +104,13 @@ ENV APACHE_LOG_DIR /var/log/apache2
 ENV LANG C
 RUN mkdir -p $APACHE_RUN_DIR $APACHE_LOCK_DIR $APACHE_LOG_DIR
 
+VOLUME $APACHE_LOG_DIR
+
 # Got it from github docker-library/httpd/2.4/httpd-foreground
 RUN set -e
 
 # Apache gets grumpy about PID files pre-existing
-RUN rm -f /usr/local/apache2/logs/httpd.pid
+RUN rm -f $APACHE_PID_FILE
 
 EXPOSE 80
 CMD ["/usr/sbin/apache2", "-D", "FOREGROUND"]
