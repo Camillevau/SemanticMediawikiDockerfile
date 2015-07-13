@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Got it from github docker-library/httpd/2.4/httpd-foreground
+
+set -e
+
+# Apache gets grumpy about PID files pre-existing
+rm -f /usr/local/apache2/logs/httpd.pid
+
+exec httpd -DFOREGROUND
