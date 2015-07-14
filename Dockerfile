@@ -58,9 +58,8 @@ RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
 # MediaWiki Composer config, update
-WORKDIR /
 WORKDIR $MEDIAWIKI_DIR
-ADD composer.json $MEDIAWIKI_DIR/
+#ADD composer.json $MEDIAWIKI_DIR/
 RUN composer update --no-dev
 
 # Right Management
