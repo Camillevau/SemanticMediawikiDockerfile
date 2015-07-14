@@ -54,27 +54,6 @@ fi
   ./$0 stop $2
   ./$0 start $2 $3
   ;;
- init )
-#  cp LocalSettings
-   cp LocalSettings.php $CONFIG_DIR
-
-#  create db
-   docker run -t --name ${WIKI_SHORT_NAME}-sqltest \
- --link ${WIKI_SHORT_NAME}-mysql:mysql \
- --rm mysql \
- sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot \
- -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE mediawiki;"'
-
-#  insert db
-   docker run -t --name ${WIKI_SHORT_NAME}-sqltest \
- --link ${WIKI_SHORT_NAME}-mysql:mysql \
- --rm mysql \
- sh -c 'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot \
- -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD" mediawiki ' < ./empty_mediawiki.sql
-
-# update db
-   docker exec -it --name ${WIKI_SHORT_NAME}-mediawiki  php maintenance/update.php
-   ;;
 esac
 
 
