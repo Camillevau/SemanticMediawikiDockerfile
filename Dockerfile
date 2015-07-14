@@ -35,7 +35,7 @@ RUN    apt-get install -y \
 
 ENV MEDIAWIKI_DIR /var/www/html/$MEDIAWIKI_VERSION
 
-WORKDIR /var/www/html/
+WORKDIR /var/www/
 
 # Getting working version of mediawiki (25 is buggy)
 RUN curl https://releases.wikimedia.org/mediawiki/1.24/$MEDIAWIKI_VERSION.tar.gz \
@@ -54,22 +54,21 @@ RUN composer update --no-dev
 # Apache config
 ADD 000-default.conf /etc/apache2/sites-enabled/
 
-# Right Management
-RUN chown -R www-data:www-data /var/www/
-
-
+# link up a convenient directory for mounting filesystem from the outside
+RUN ln -s MEDIAWIKI_DIR /var/www/html/mediawiki
 
 # Define mountable directories.
 #VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
 
-# Define working directory.
-#WORKDIR /etc/nginx
+# Right Management
+RUN chown -R www-data:www-data /var/www/
+
 
 ####
 # Mediawiki Tailoring
 ####
 
-ADD LocalSettings.php ./
+ADD LocalSettingsProxy.php ./
 
 VOLUME /var/www/mediawiki/images
 VOLUME /var/www/html/custom
@@ -81,11 +80,9 @@ VOLUME /var/www/html/custom
 ####
 # Cleaning
 ####
-RUN apt-get install nano
 
 RUN apt-get autoclean && \
     rm -rf /var/lib/apt/lists/*
-
 
 ####
 # Apache2 config
