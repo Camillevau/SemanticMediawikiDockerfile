@@ -3,10 +3,6 @@
 # Pull base image.
 FROM debian:latest
 
-# Main variable
-ENV MEDIAWIKI_VERSION=mediawiki-1.24.2
-
-
 # Update system
 RUN  apt-get update
 
@@ -14,68 +10,72 @@ RUN    apt-get install -y \
   apache2 \
   curl \
   imagemagick \
-  git \
-  graphviz \
   libapache2-mod-php5 \
   libpcre3-dev \
   php5-gd \
   php5-imagick \
   php5-intl \
   php5-mcrypt \
-  php5-mysql \
-  php5-dev \
-  make \
-  sudo \
-  wget 
+  php5-dev
 
+#Specific to this install
+RUN    apt-get install -y \
+  git \
+  graphviz \
+  php5-mysql
+
+#Extas
+#RUN    apt-get install -y \
+#  git \
+#  make \
+#  sudo \
+#  wget 
+
+# Apache config
+ADD 000-default.conf /etc/apache2/sites-enabled/
 
 ####
 # Mediawiki install
 ###
 
-ENV MEDIAWIKI_DIR /var/www/html/$MEDIAWIKI_VERSION
+ENV MEDIAWIKI_VERSION mediawiki-1.24.2
+ENV MEDIAWIKI_VERSION_URL https://releases.wikimedia.org/mediawiki/1.24/$MEDIAWIKI_VERSION.tar.gz
+ENV HTML_DIR /var/www/html/
+ENV MEDIAWIKI_DIR /var/www/html/mediawiki
 
 WORKDIR /var/www/
 
-# Getting working version of mediawiki (25 is buggy)
-RUN curl https://releases.wikimedia.org/mediawiki/1.24/$MEDIAWIKI_VERSION.tar.gz \
-  | tar -xz
+# Getting working version of mediawiki (1.25 is buggy)
+RUN curl $MEDIAWIKI_VERSION_URL | tar -xz
 
-WORKDIR $MEDIAWIKI_VERSION
+# link up a convenient directory for mounting filesystem from the outside
+RUN ln -s /var/www/$MEDIAWIKI_VERSION $MEDIAWIKI_DIR
 
-# Composer install, config, update
+
+# Composer install
+WORKDIR /tmp
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
+# MediaWiki Composer config, update
+WORKDIR /
+WORKDIR $MEDIAWIKI_DIR
 ADD composer.json $MEDIAWIKI_DIR/
 RUN composer update --no-dev
 
-
-# Apache config
-ADD 000-default.conf /etc/apache2/sites-enabled/
-
-# link up a convenient directory for mounting filesystem from the outside
-RUN ln -s MEDIAWIKI_DIR /var/www/html/mediawiki
-
-# Define mountable directories.
-#VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
-
 # Right Management
 RUN chown -R www-data:www-data /var/www/
-
 
 ####
 # Mediawiki Tailoring
 ####
 
-ADD LocalSettingsProxy.php ./
+#ADD LocalSettingsProxy.php $MEDIAWIKI_DIR/LocalSettings.php
+#RUN mv $MEDIAWIKI_DIR/LocalSettingsProxy.php $MEDIAWIKI_DIR/LocalSettings.php
+RUN echo "define( 'MW_CONFIG_FILE', \"$MEDIAWIKI_DIR/custom/LocalSettings.php\" );">> $MEDIAWIKI_DIR/includes/Defines.php
 
-VOLUME /var/www/mediawiki/images
-VOLUME /var/www/html/custom
-
-#VOLUME /etc/mediawiki/CustomSettings.php
-#VOLUME /var/www/mediawiki/images/logo.png
-
+VOLUME $MEDIAWIKI_DIR/images
+VOLUME $MEDIAWIKI_DIR/custom
 
 ####
 # Cleaning
@@ -98,7 +98,7 @@ ENV APACHE_RUN_DIR /var/run/apache2
 ENV APACHE_PID_FILE $APACHE_RUN_DIR/apache2.pid
 ENV APACHE_LOCK_DIR /var/lock/apache2
 ENV APACHE_LOG_DIR /var/log/apache2
-ENV LANG C
+#ENV LANG C
 RUN mkdir -p $APACHE_RUN_DIR $APACHE_LOCK_DIR $APACHE_LOG_DIR
 
 VOLUME $APACHE_LOG_DIR
