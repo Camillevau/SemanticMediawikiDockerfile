@@ -10,18 +10,10 @@ if [ "$#" == "0" ]; then
 fi
 
 WIKI_SHORT_NAME=$2
-UPLOADS_DIR=/var/smw/$WIKI_SHORT_NAME/uploads
-CONFIG_DIR=/var/smw/$WIKI_SHORT_NAME/custom
-LOG_DIR=/var/smw/$WIKI_SHORT_NAME/logs
-HTML_DIR=/var/www/html/mediawiki
-#Create the directory for mysql data
-mkdir -p $UPLOADS_DIR
-mkdir -p $CONFIG_DIR
-mkdir -p $LOG_DIR
+CONTAINER_PORT=$3
 
 IMAGE_NAME=camille/semantic_mediawiki
 
-CONTAINER_PORT=$3
 CONTAINER_NAME=${WIKI_SHORT_NAME}-mediawiki
 
 # -it ${IMAGE_NAME} bash
@@ -37,6 +29,19 @@ if [ "$#" != "3" ]; then
         echo "$USAGE"
         exit 1
 fi
+
+UPLOADS_DIR=/var/smw/$WIKI_SHORT_NAME/uploads
+CONFIG_DIR=/var/smw/$WIKI_SHORT_NAME/custom
+LOG_DIR=/var/smw/$WIKI_SHORT_NAME/logs
+
+#Create the directory for mysql data
+mkdir -p $UPLOADS_DIR
+mkdir -p $CONFIG_DIR
+mkdir -p $LOG_DIR
+
+HTML_DIR=/var/www/html/mediawiki
+
+
   docker run --name ${WIKI_SHORT_NAME}-mediawiki \
    --link ${WIKI_SHORT_NAME}-mysql:mysql \
    -p $CONTAINER_PORT:80 \

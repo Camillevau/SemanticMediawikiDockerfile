@@ -26,7 +26,6 @@ RUN    apt-get install -y \
 
 #Extas
 #RUN    apt-get install -y \
-#  git \
 #  make \
 #  sudo \
 #  wget 
@@ -35,9 +34,17 @@ RUN    apt-get install -y \
 ADD 000-default.conf /etc/apache2/sites-enabled/
 
 ####
-# Mediawiki install
-###
+# Composer install
+####
+WORKDIR /tmp
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
+####
+# Mediawiki install
+####
+
+# TODO : Migrate to 1.25 
 ENV MEDIAWIKI_VERSION mediawiki-1.24.2
 ENV MEDIAWIKI_VERSION_URL https://releases.wikimedia.org/mediawiki/1.24/$MEDIAWIKI_VERSION.tar.gz
 ENV HTML_DIR /var/www/html/
@@ -45,36 +52,34 @@ ENV MEDIAWIKI_DIR /var/www/html/mediawiki
 
 WORKDIR /var/www/
 
-# Getting working version of mediawiki (1.25 is buggy)
+# Getting mediawiki
 RUN curl $MEDIAWIKI_VERSION_URL | tar -xz
 
 # link up a convenient directory for mounting filesystem from the outside
 RUN ln -s /var/www/$MEDIAWIKI_VERSION $MEDIAWIKI_DIR
 
 
-# Composer install
-WORKDIR /tmp
-RUN curl -sS https://getcomposer.org/installer | php
-RUN mv composer.phar /usr/local/bin/composer
-
-# MediaWiki Composer config, update
-WORKDIR $MEDIAWIKI_DIR
-#ADD composer.json $MEDIAWIKI_DIR/
-RUN composer update --no-dev
-
-# Right Management
-RUN chown -R www-data:www-data /var/www/
-
 ####
 # Mediawiki Tailoring
 ####
 
-#ADD LocalSettingsProxy.php $MEDIAWIKI_DIR/LocalSettings.php
-#RUN mv $MEDIAWIKI_DIR/LocalSettingsProxy.php $MEDIAWIKI_DIR/LocalSettings.php
+# MediaWiki Composer config, update
+WORKDIR $MEDIAWIKI_DIR
+ADD composer.json $MEDIAWIKI_DIR/
+RUN composer update --no-dev
+
 RUN echo "define( 'MW_CONFIG_FILE', \"$MEDIAWIKI_DIR/custom/LocalSettings.php\" );">> $MEDIAWIKI_DIR/includes/Defines.php
+
+# Right Management
+RUN chown -R www-data:www-data /var/www/
+
+RUN echo "test"
+
+RUN usermod -u 1000 www-data
 
 VOLUME $MEDIAWIKI_DIR/images
 VOLUME $MEDIAWIKI_DIR/custom
+
 
 ####
 # Cleaning
@@ -109,4 +114,11 @@ RUN set -e
 RUN rm -f $APACHE_PID_FILE
 
 EXPOSE 80
+
+
+COPY docker-entrypoint.sh /tmp/entrypoint.sh
+ENTRYPOINT ["/tmp/entrypoint.sh"]
+
+
 CMD ["/usr/sbin/apache2", "-D", "FOREGROUND"]
+

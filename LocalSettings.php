@@ -157,3 +157,6 @@ require_once "$IP/extensions/WikiEditor/WikiEditor.php";
 # End of automatically generated settings.
 # Add more configuration options below.
 
+# Disable the changes introduced in 1.23 & 1.24 on the Job Queue Processing
+$wgRunJobsAsync=false;
+$wgJobRunRate = 2;
