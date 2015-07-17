@@ -34,6 +34,13 @@ RUN    apt-get install -y \
 ADD 000-default.conf /etc/apache2/sites-enabled/
 
 ####
+# Mail SMTP install
+####
+
+RUN pear install mail
+RUN pear install net_smtp
+
+####
 # Composer install
 ####
 WORKDIR /tmp
@@ -79,7 +86,6 @@ RUN usermod -u 1000 www-data
 
 VOLUME $MEDIAWIKI_DIR/images
 VOLUME $MEDIAWIKI_DIR/custom
-
 
 ####
 # Cleaning

@@ -160,3 +160,14 @@ require_once "$IP/extensions/WikiEditor/WikiEditor.php";
 # Disable the changes introduced in 1.23 & 1.24 on the Job Queue Processing
 $wgRunJobsAsync=false;
 $wgJobRunRate = 2;
+
+#See also https://www.mediawiki.org/wiki/Manual:$wgSMTP#Error_sending_mail:_Unknown_error_in_PHP.27s_mail.28.29_function_Mediawiki
+$wgSMTP = array(
+ 'host'     => "mail.example.com", // could also be an IP address. Where the SMTP server is located
+ 'IDHost'   => "example.com",      // Generally this will be the domain name of your website (aka mywiki.org)
+ 'port'     => 25,                 // Port to use when connecting to the SMTP server
+ 'auth'     => true,               // Should we use SMTP authentication (true or false)
+ 'username' => "my_user_name",     // Username to use for SMTP authentication (if being used)
+ 'password' => "my_password"       // Password to use for SMTP authentication (if being used)
+);
+
